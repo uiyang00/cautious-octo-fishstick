@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        .calculator {
+            width: 100%;
+            max-width: 400px;
+            background-color: #000;
+            border-radius: 30px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .display {
+            color: #fff;
+            font-size: 60px;
+            text-align: right;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            font-weight: 300;
+            overflow-x: auto;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .button {
+            width: 100%;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            font-size: 32px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .button:active {
+            transform: scale(0.95);
+        }
+
+        .button.gray {
+            background-color: #a5a5a5;
+            color: #000;
+        }
+
+        .button.gray:hover {
+            background-color: #d4d4d4;
+        }
+
+        .button.orange {
+            background-color: #ff9500;
+            color: #fff;
+        }
+
+        .button.orange:hover {
+            background-color: #ffb74d;
+        }
+
+        .button.dark-gray {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .button.dark-gray:hover {
+            background-color: #666;
+        }
+
+        .button.zero {
+            grid-column: span 2;
+            border-radius: 40px;
+        }
+
+        @media (max-width: 480px) {
+            .calculator {
+                height: 100vh;
+                max-width: 100%;
+                border-radius: 0;
+                padding: 20px;
+            }
+
+            .display {
+                font-size: 80px;
+                padding: 40px 0;
+            }
+
+            .buttons {
+                gap: 12px;
+            }
+
+            .button {
+                height: 90px;
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <button class="button gray" onclick="clearDisplay()">AC</button>
+            <button class="button gray" onclick="toggleSign()">+/-</button>
+            <button class="button gray" onclick="appendOperator('%')">%</button>
+            <button class="button orange" onclick="appendOperator('/')">÷</button>
+            
+            <button class="button dark-gray" onclick="appendNumber('7')">7</button>
+            <button class="button dark-gray" onclick="appendNumber('8')">8</button>
+            <button class="button dark-gray" onclick="appendNumber('9')">9</button>
+            <button class="button orange" onclick="appendOperator('*')">×</button>
+            
+            <button class="button dark-gray" onclick="appendNumber('4')">4</button>
+            <button class="button dark-gray" onclick="appendNumber('5')">5</button>
+            <button class="button dark-gray" onclick="appendNumber('6')">6</button>
+            <button class="button orange" onclick="appendOperator('-')">-</button>
+            
+            <button class="button dark-gray" onclick="appendNumber('1')">1</button>
+            <button class="button dark-gray" onclick="appendNumber('2')">2</button>
+            <button class="button dark-gray" onclick="appendNumber('3')">3</button>
+            <button class="button orange" onclick="appendOperator('+')">+</button>
+            
+            <button class="button dark-gray zero" onclick="appendNumber('0')">0</button>
+            <button class="button dark-gray" onclick="appendNumber('.')">.</button>
+            <button class="button orange" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        let displayValue = '0';
+        let firstOperand = null;
+        let operator = null;
+        let waitingForSecondOperand = false;
+
+        const display = document.getElementById('display');
+
+        function updateDisplay() {
+            display.textContent = displayValue;
+        }
+
+        function clearDisplay() {
+            displayValue = '0';
+            firstOperand = null;
+            operator = null;
+            waitingForSecondOperand = false;
+            updateDisplay();
+        }
+
+        function toggleSign() {
+            if (displayValue === '0') return;
+            displayValue = displayValue.startsWith('-') ? displayValue.slice(1) : '-' + displayValue;
+            updateDisplay();
+        }
+
+        function appendNumber(number) {
+            if (waitingForSecondOperand) {
+                displayValue = number;
+                waitingForSecondOperand = false;
+            } else {
+                displayValue = displayValue === '0' && number !== '.' ? number : displayValue + number;
+            }
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            if (operator && waitingForSecondOperand) {
+                operator = op;
+                return;
+            }
+
+            if (firstOperand === null && !isNaN(parseFloat(displayValue))) {
+                firstOperand = parseFloat(displayValue);
+            } else if (operator) {
+                const result = calculateResult();
+                displayValue = result.toString();
+                firstOperand = result;
+            }
+
+            waitingForSecondOperand = true;
+            operator = op;
+        }
+
+        function calculateResult() {
+            const secondOperand = parseFloat(displayValue);
+            if (isNaN(secondOperand)) return firstOperand;
+
+            switch (operator) {
+                case '+':
+                    return firstOperand + secondOperand;
+                case '-':
+                    return firstOperand - secondOperand;
+                case '*':
+                    return firstOperand * secondOperand;
+                case '/':
+                    return firstOperand / secondOperand;
+                case '%':
+                    return firstOperand % secondOperand;
+                default:
+                    return secondOperand;
+            }
+        }
+
+        function calculate() {
+            if (operator && !waitingForSecondOperand) {
+                const result = calculateResult();
+                displayValue = result.toString();
+                firstOperand = result;
+                operator = null;
+                waitingForSecondOperand = true;
+                updateDisplay();
+            }
+        }
+
+        // 键盘支持
+        document.addEventListener('keydown', function(event) {
+            const key = event.key;
+
+            if (key >= '0' && key <= '9') {
+                appendNumber(key);
+            } else if (key === '.') {
+                appendNumber(key);
+            } else if (key === '+' || key === '-' || key === '*' || key === '/') {
+                appendOperator(key);
+            } else if (key === '%') {
+                appendOperator(key);
+            } else if (key === '=' || key === 'Enter') {
+                calculate();
+            } else if (key === 'Backspace') {
+                if (displayValue.length > 1) {
+                    displayValue = displayValue.slice(0, -1);
+                } else {
+                    displayValue = '0';
+                }
+                updateDisplay();
+            } else if (key === 'Escape') {
+                clearDisplay();
+            }
+        });
+    </script>
+</body>
+</html>
